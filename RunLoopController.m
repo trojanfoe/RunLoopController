@@ -1,3 +1,11 @@
+/*
+ * Copyright Andy Duplain (c)2014.
+ *
+ * See: https://github.com/trojanfoe/RunLoopController
+ *
+ * Licensed under the MIT License.
+ */
+
 #import "RunLoopController.h"
 
 #ifdef LOGGING
