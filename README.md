@@ -1,14 +1,13 @@
 RunLoopController
 =================
 
-RunLoopController is a simple Objective-C class to help drive the run loop within command line utilities.
+RunLoopController is a simple Objective-C class to help drive the run loop within command line utilities.  It supports OSX 10.x (where 'x' is pretty low I reckon).
 
 It really only provides a simple signalling mechanism, using a Mach Port, to allow a run loop to be interrupted so it can examine conditions for termination.
 
 There are 3 test programs provided, which should illustrate its use:
 
 ## testAsyncNetworking ##
-
 
 This is a single-thread test that uses `NSURLConnection` to asynchronously download a web page.
 
@@ -18,15 +17,11 @@ This is a multi-threaded test that uses `NSThread`-subclasses and demonstrates h
 
 ## testDispatch ##
 
-This is a multi-threads test that uses Grand Central Dispatch to perform work in the background and demonstrates a different method of waiting within the main thread's run loop for the workers to finish.
-
-Support Platforms
-=================
-OSX 10.x (where 'x' is pretty low I reckon).
+This is a multi-threaded test that uses Grand Central Dispatch to perform work in the background and demonstrates a different method of waiting within the main thread's run loop for the workers to finish.
 
 To Build
 ========
-Install the Xcode Command Line tools and run 'make all' or 'make test'.
+Install the Xcode Command Line tools (or compiler of choice) and run `make all` or `make test`:
 
     $ make test
 
