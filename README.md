@@ -19,15 +19,12 @@ This is a multi-threaded test that uses `NSThread`-subclasses and demonstrates h
 
 This is a multi-threaded test that uses Grand Central Dispatch to perform work in the background and demonstrates a different method of waiting within the main thread's run loop for the workers to finish.
 
-To Build
-========
+## To Build ##
 Install the Xcode Command Line tools (or compiler of choice) and run `make all` or `make test`:
 
     $ make test
 
-License
-=======
-
+## License ##
 RunLoopController is released under the MIT Open Source License. This is a very permissive license but I would ask that any improvements or fixes to the library are contributed back so that others may benefit from our combined efforts:
 
 The MIT License (MIT)
