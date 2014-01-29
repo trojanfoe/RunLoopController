@@ -13,8 +13,8 @@ OBJS = $(SRCS:.m=.o)
 
 all: $(TARGETS)
 
-testAsyncNetworking: testAsyncNetworking.o RunLoopController.o
-	$(CC) $(LDFLAGS) -o $@ testAsyncNetworking.o RunLoopController.o $(LIBS)
+testAsyncNetworking: testAsyncNetworking.o RunLoopController.o AsyncDownloader.o
+	$(CC) $(LDFLAGS) -o $@ testAsyncNetworking.o RunLoopController.o AsyncDownloader.o $(LIBS)
 
 testMultiTimers: testMultiTimers.o RunLoopController.o
 	$(CC) $(LDFLAGS) -o $@ testMultiTimers.o RunLoopController.o $(LIBS)

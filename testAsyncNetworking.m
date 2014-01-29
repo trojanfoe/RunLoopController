@@ -4,9 +4,13 @@
  * See: https://github.com/trojanfoe/RunLoopController
  *
  * Licensed under the MIT License.
+ *
+ * Usage: testAsyncDownloader [url ... url]
+ * If a url is not specified then http://www.google.com is used.
  */
 
 #import "RunLoopController.h"
+#import "AsyncDownloader.h"
 
 #ifdef LOGGING
 #define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
@@ -14,99 +18,106 @@
 #define LOG(fmt, ...) /* nothing */
 #endif
 
-@interface AsyncDownloader : NSObject <NSURLConnectionDelegate> {
-    NSURLConnection *_connection;
-    NSMutableData *_responseData;
-    NSStringEncoding _responseEncoding;
+@interface MainObject : NSObject {
+    RunLoopController *_runLoopController;
 }
 
-- (BOOL)startDownload;
+- (int)runWithArgc:(int)argc
+              argv:(const char **)argv;
 
 @end
 
-@implementation AsyncDownloader
+@implementation MainObject
 
-- (BOOL)startDownload {
-    NSURL *url = [NSURL URLWithString:@"http://www.google.com"];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    [request setHTTPMethod:@"GET"];
+- (int)runWithArgc:(int)argc
+              argv:(const char **)argv {
+    @autoreleasepool {
+        _runLoopController = [RunLoopController new];
+        [_runLoopController register];
 
-    // Accept-Charset is not honoured by google.com :-/
-    [request addValue:@"utf-8" forHTTPHeaderField:@"Accept-Charset"];
+        AsyncDownloader *downloader = [AsyncDownloader new];
 
-    _connection = [[NSURLConnection alloc] initWithRequest:request
-                                                  delegate:self];
-    
-    LOG(@"Request sent");
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(downloadFinished:)
+                                                     name:AsyncDownloaderFinishedNotification
+                                                   object:nil];
 
-    return YES;
-}
+        // Capture the list of URLs
+        NSMutableArray *urls = [NSMutableArray new];
+        if (argc == 1) {
+            [urls addObject:[NSURL URLWithString:@"http://www.google.com"]];
+        } else {
+            for (int i = 1; i < argc; i++) {
+                [urls addObject:[NSURL URLWithString:[NSString stringWithUTF8String:argv[i]]]];
+            }
+        }
 
-#pragma mark - NSURLConnectionDelegate methods
+        // Initialize the list of AsyncDownloader objects
+        NSMutableArray *downloaders = [NSMutableArray new];
+        for (NSURL *url in urls) {
+            AsyncDownloader *downloader = [AsyncDownloader new];
+            [downloaders addObject:downloader];
+        }
 
-- (void)connection:(NSURLConnection *)connection
-didReceiveResponse:(NSURLResponse *)response {
+        // Start downloading from the URLs
+        for (NSInteger i = 0; i < [downloaders count]; i++) {
+            AsyncDownloader *downloader = [downloaders objectAtIndex:i];
+            [downloader downloadFromURL:[urls objectAtIndex:i]];
+        }
 
-    NSString *textEncodingName = response.textEncodingName;
-    LOG(@"Received response. Encoding=%@", textEncodingName);
-    _responseData = [NSMutableData new];
-    if (textEncodingName) {
-        CFStringEncoding cfEncoding = CFStringConvertIANACharSetNameToEncoding((CFStringRef)textEncodingName);
-        _responseEncoding = CFStringConvertEncodingToNSStringEncoding(cfEncoding);
-    } else {
-        _responseEncoding = NSUTF8StringEncoding;
+        BOOL allFinished = NO;
+        while (!allFinished && [_runLoopController run]) {
+            // Check if all downloaders have finished
+            NSInteger finished = 0;
+            for (AsyncDownloader *downloader in downloaders) {
+                if (downloader.isFinished)
+                    finished++;
+            }
+            if (finished == [downloaders count]) {
+                NSLog(@"All downloaders complete");
+                allFinished = YES;
+            } else {
+                NSLog(@"%ld/%ld downloaders complete", (long)finished, (long)[downloaders count]);
+            }
+        }
+
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                        name:AsyncDownloaderFinishedNotification
+                                                      object:nil];
+
+        [_runLoopController deregister];
+
     }
+    return 0;
 }
 
-- (void)connection:(NSURLConnection *)connection
-    didReceiveData:(NSData *)data {
+- (void)downloadFinished:(NSNotification *)notification {
 
-    LOG(@"Received %lu bytes", (unsigned long)[data length]);
+    AsyncDownloader *downloader = (AsyncDownloader *)[notification object];
+    NSDictionary *userInfo = [notification userInfo];
+    NSNumber *succeeded = userInfo[AsyncDownloaderFinishedNotificationSucceededKey];
+    NSAssert(succeeded, @"Expected a succeeded value in the notification userInfo dictionary");
 
-    [_responseData appendData:data];
-}
+    if ([succeeded boolValue]) {
+        NSLog(@"Download complete from '%@'", downloader.url);
+    } else {
+        NSError *error = userInfo[AsyncDownloaderFinishedNotificationErrorKey];
+        NSAssert(error, @"Expected an error value in the notification userInfo dictionary");
+        NSLog(@"Failed to download from '%@': %@", downloader.url, [error localizedDescription]);
+    }
 
-- (NSCachedURLResponse *)connection:(NSURLConnection *)connection
-                  willCacheResponse:(NSCachedURLResponse *)cachedResponse {
-    return nil;         // Not necessary
-}
-
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
-
-    LOG(@"Finished loading");
-
-#ifdef LOGGING
-    NSString *responseString = [[NSString alloc] initWithData:_responseData
-                                                     encoding:_responseEncoding];
-    LOG(@"%@", responseString);
-#endif // LOGGING
-
-    [[RunLoopController currentRunLoopController] terminate];
-}
-
-- (void)connection:(NSURLConnection *)connection
-  didFailWithError:(NSError *)error {
-
-    LOG(@"Network error: %@", [error localizedDescription]);
-    [[RunLoopController currentRunLoopController] terminate];
+    [_runLoopController signal];
 }
 
 @end
+
 
 int main(int argc, const char **argv) {
     int retval = 0;
     @autoreleasepool {
-
-        RunLoopController *runLoopController = [RunLoopController new];
-        [runLoopController register];
-
-        AsyncDownloader *downloader = [AsyncDownloader new];
-        [downloader startDownload];
-
-        while ([runLoopController run])
-            ;
-
-        [runLoopController deregister];
+        MainObject *mainObject = [MainObject new];
+        retval = [mainObject runWithArgc:argc
+                                    argv:argv];
     }
     return retval;
 }
