@@ -25,6 +25,8 @@
     LOG(@"%p: Starting", self);
 
     self.runLoopController = [RunLoopController new];
+    [self.runLoopController register];
+
     _timer = [NSTimer scheduledTimerWithTimeInterval:_sleepTime
                                               target:self
                                             selector:@selector(timerFired:)
@@ -33,6 +35,8 @@
 
     while ([self.runLoopController run])
         ;
+
+    [self.runLoopController deregister];
 }
 
 - (void)timerFired:(NSTimer *)timer {
@@ -48,6 +52,7 @@ int main(int argc, const char **argv) {
     @autoreleasepool {
 
         RunLoopController *runLoopController = [RunLoopController new];
+        [runLoopController register];
         
         TimerThread *threads[4];
         for (unsigned i = 0; i < 4; i++) {
@@ -72,6 +77,8 @@ int main(int argc, const char **argv) {
             if ([RunLoopController instanceCount] == 1)
                 break;
         }
+
+        [runLoopController deregister];
     }
     return retval;
 }

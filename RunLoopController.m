@@ -24,42 +24,37 @@ static NSInteger _instanceCount = 0;
     return _instanceCount;
 }
 
-- (id)init {
-    self = [super init];
-    if (self) {
-        NSRunLoop *runloop = [NSRunLoop currentRunLoop];
-        _terminatePort = [NSMachPort new];
-        _terminatePort.delegate = self;
-        [runloop addPort:_terminatePort
-                 forMode:NSDefaultRunLoopMode];
+- (void)register {
+    NSRunLoop *runloop = [NSRunLoop currentRunLoop];
+    _terminatePort = [NSMachPort new];
+    _terminatePort.delegate = self;
+    [runloop addPort:_terminatePort
+             forMode:NSDefaultRunLoopMode];
 
-        NSMutableDictionary *threadDict = [[NSThread currentThread] threadDictionary];
-        [threadDict setObject:self forKey:_threadDictKey];
+    NSMutableDictionary *threadDict = [[NSThread currentThread] threadDictionary];
+    [threadDict setObject:self forKey:_threadDictKey];
 
-        _instanceCount++;
+    _instanceCount++;
 
-        LOG(@"%p: init. instanceCount=%ld", self, (long)_instanceCount);
-    }
-    return self;
+    LOG(@"%p: register. instanceCount=%ld", self, (long)_instanceCount);
 }
 
-- (void)dealloc {
+- (void)deregister {
+
+    NSAssert(_terminatePort, @"Object is not registered");
 
     _instanceCount--;
 
-#if 0
-    // If the RunLoopController is referenced from an NSThread-subclass, then doing this
-    // will cause a SIGSEGV.
     NSMutableDictionary *threadDict = [[NSThread currentThread] threadDictionary];
     [threadDict removeObjectForKey:_threadDictKey];
-#endif
 
     NSRunLoop *runloop = [NSRunLoop currentRunLoop];
     [runloop removePort:_terminatePort
                 forMode:NSDefaultRunLoopMode];
     [_terminatePort invalidate];
+    _terminatePort = nil;
 
-    LOG(@"%p: dealloc. instanceCount=%ld", self, (long)_instanceCount);
+    LOG(@"%p: deregister. instanceCount=%ld", self, (long)_instanceCount);
 }
  
 - (BOOL)run {

@@ -16,6 +16,16 @@
 + (NSInteger)instanceCount;
 
 /**
+ * Register the run loop controller with the current run loop.
+ */
+- (void)register;
+
+/**
+ * Deregister the run loop controller from the current run loop.
+ */
+- (void)deregister;
+
+/**
  * Run the current run loop.  This is a shortcut for:
  * calling runMode:NSDefaultRunLoopModebeforeDate:[NSDate distantFuture]
  *

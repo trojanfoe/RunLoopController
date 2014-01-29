@@ -93,6 +93,8 @@ int main(int argc, const char **argv) {
     @autoreleasepool {
 
         RunLoopController *runLoopController = [RunLoopController new];
+        [runLoopController register];
+
         AsyncDownloader *downloader = [AsyncDownloader new];
         downloader.runLoopController = runLoopController;
 
@@ -101,6 +103,7 @@ int main(int argc, const char **argv) {
         while ([runLoopController run])
             ;
 
+        [runLoopController deregister];
     }
     return retval;
 }
