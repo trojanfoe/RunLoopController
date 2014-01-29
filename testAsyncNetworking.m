@@ -5,7 +5,9 @@
  *
  * Licensed under the MIT License.
  *
- * Usage: testAsyncNetworking [url ... url]
+ * usage: testAsyncNetworking [options] [url ... url]
+ * options:
+ *     -s:        Use a single thread.
  * If a url is not specified then http://www.google.com is used.
  */
 
@@ -17,15 +19,17 @@
     RunLoopController *_runLoopController;
 }
 
-- (int)runWithArgc:(int)argc
-              argv:(const char **)argv;
+@property (readonly, getter=isFinished) BOOL finished;
+
+- (int)runWithArguments:(NSArray *)arguments;
 
 @end
 
 @implementation MainObject
 
-- (int)runWithArgc:(int)argc
-              argv:(const char **)argv {
+@synthesize finished = _finished;
+
+- (int)runWithArguments:(NSArray *)arguments {
     @autoreleasepool {
         _runLoopController = [RunLoopController new];
         [_runLoopController register];
@@ -37,14 +41,13 @@
                                                      name:AsyncDownloaderFinishedNotification
                                                    object:nil];
 
+        if ([arguments count] == 0)
+            arguments = @[ @"http://www.google.com" ];
+
         // Capture the list of URLs
         NSMutableArray *urls = [NSMutableArray new];
-        if (argc == 1) {
-            [urls addObject:[NSURL URLWithString:@"http://www.google.com"]];
-        } else {
-            for (int i = 1; i < argc; i++) {
-                [urls addObject:[NSURL URLWithString:[NSString stringWithUTF8String:argv[i]]]];
-            }
+        for (NSString *urlString in arguments) {
+            [urls addObject:[NSURL URLWithString:urlString]];
         }
 
         // Initialize the list of AsyncDownloader objects
@@ -60,16 +63,20 @@
             [downloader downloadFromURL:[urls objectAtIndex:i]];
         }
 
+        // Wait until all downloaders are finished
         BOOL allFinished = NO;
         while (!allFinished && [_runLoopController run]) {
-            // Check if all downloaders have finished
             NSInteger finished = 0;
-            for (AsyncDownloader *downloader in downloaders) {
+            for (AsyncDownloader *downloader in downloaders)
                 if (downloader.isFinished)
                     finished++;
-            }
             NSLog(@"%ld/%ld downloaders complete", (long)finished, (long)[downloaders count]);
             allFinished = (finished == [downloaders count]);
+        }
+
+        _finished = YES;
+        if (![NSThread isMainThread]) {
+            [[RunLoopController mainRunLoopController] signal];
         }
 
         [[NSNotificationCenter defaultCenter] removeObserver:self
@@ -112,9 +119,57 @@
 int main(int argc, const char **argv) {
     int retval = 0;
     @autoreleasepool {
-        MainObject *mainObject = [MainObject new];
-        retval = [mainObject runWithArgc:argc
-                                    argv:argv];
+        BOOL opt, singleThread = NO;
+        while ((opt = getopt(argc, (char * const *)argv, "s")) != -1) {
+            switch (opt) {
+                case 's': singleThread = YES; break;
+                default: NSLog(@"Invalid options"); return -1;
+            }
+        }
+        argc -= optind;
+        argv += optind;
+
+        if (singleThread) {
+            // Send all URLs to [MainObject runWithArguments:] on the current (main) thread
+            NSLog(@"Using a single thread");
+            MainObject *mainObj = [MainObject new];
+            NSMutableArray *arguments = [NSMutableArray new];
+            for (int i = 1; i < argc; i++)
+                [arguments addObject:[NSString stringWithUTF8String:argv[i]]];
+            retval = [mainObj runWithArguments:arguments];
+        } else {
+            NSInteger count = MAX(argc, 1);
+            NSLog(@"Using %ld threads", (long)count);
+
+            RunLoopController *runLoopController = [RunLoopController new];
+            [runLoopController register];
+
+            // Send each URL to [MainObject runWithArguments:] using a separate thread
+            NSMutableArray *mainObjs = [NSMutableArray new];
+            for (NSInteger i = 0; i < count; i++) {
+                MainObject *mainObj = [MainObject new];
+                NSMutableArray *arguments = [NSMutableArray new];
+                if (i + 1 < argc)
+                    [arguments addObject:[NSString stringWithUTF8String:argv[i + 1]]];
+                [mainObjs addObject:mainObj];
+                [NSThread detachNewThreadSelector:@selector(runWithArguments:)
+                                         toTarget:mainObj
+                                       withObject:arguments];
+            }
+
+            // Wait until all MainObject objects are finished
+            BOOL allFinished = NO;
+            while (!allFinished && [runLoopController run]) {
+                NSInteger finished = 0;
+                for (MainObject *mainObj in mainObjs)
+                    if (mainObj.isFinished)
+                        finished++;
+                NSLog(@"%ld/%ld mainObjects complete", (long)finished, (long)[mainObjs count]);
+                allFinished = (finished == [mainObjs count]);
+            }
+
+            [runLoopController deregister];
+        }
     }
     return retval;
 }

@@ -23,7 +23,10 @@ testDispatch: testDispatch.o RunLoopController.o
 	$(CC) $(LDFLAGS) -o $@ testDispatch.o RunLoopController.o $(LIBS)
 
 test: $(TARGETS)
-	$(foreach exe,$(TARGETS),$(shell ./$(exe)))
+	./testAsyncNetworking -s http://www.google.co.uk http://facebook.com http://stackoverflow.com http://qwerty
+	./testAsyncNetworking http://www.google.co.uk http://facebook.com http://stackoverflow.com http://qwerty
+	./testMultiTimers
+	./testDispatch
 
 clean:
 	rm -f $(TARGETS) *.o
