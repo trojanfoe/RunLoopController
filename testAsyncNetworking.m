@@ -1,8 +1,6 @@
 #import "RunLoopController.h"
 
-#define LOGGING 1
-
-#if LOGGING
+#ifdef LOGGING
 #define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
 #else
 #define LOG(fmt, ...) /* nothing */
@@ -13,8 +11,6 @@
     NSMutableData *_responseData;
     NSStringEncoding _responseEncoding;
 }
-
-@property RunLoopController *runLoopController;
 
 - (BOOL)startDownload;
 
@@ -71,19 +67,20 @@ didReceiveResponse:(NSURLResponse *)response {
 
     LOG(@"Finished loading");
 
+#ifdef LOGGING
     NSString *responseString = [[NSString alloc] initWithData:_responseData
                                                      encoding:_responseEncoding];
-
     LOG(@"%@", responseString);
+#endif // LOGGING
 
-    [self.runLoopController terminate];
+    [[RunLoopController currentRunLoopController] terminate];
 }
 
 - (void)connection:(NSURLConnection *)connection
-didFailWithError:(NSError *)error {
+  didFailWithError:(NSError *)error {
 
     LOG(@"Network error: %@", [error localizedDescription]);
-    [self.runLoopController terminate];
+    [[RunLoopController currentRunLoopController] terminate];
 }
 
 @end
@@ -96,8 +93,6 @@ int main(int argc, const char **argv) {
         [runLoopController register];
 
         AsyncDownloader *downloader = [AsyncDownloader new];
-        downloader.runLoopController = runLoopController;
-
         [downloader startDownload];
 
         while ([runLoopController run])

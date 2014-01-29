@@ -1,8 +1,6 @@
 #import "RunLoopController.h"
 
-#define LOGGING 1
-
-#if LOGGING
+#ifdef LOGGING
 #define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
 #else
 #define LOG(fmt, ...) /* nothing */
@@ -20,11 +18,22 @@ static NSInteger _instanceCount = 0;
 
 #pragma mark - RunLoopController methods
 
++ (RunLoopController *)currentRunLoopController {
+    return [[[NSThread currentThread] threadDictionary] objectForKey:_threadDictKey];
+}
+
++ (RunLoopController *)mainRunLoopController {
+    return [[[NSThread mainThread] threadDictionary] objectForKey:_threadDictKey];
+}
+
 + (NSInteger)instanceCount {
     return _instanceCount;
 }
 
 - (void)register {
+
+    NSAssert(![RunLoopController currentRunLoopController], @"Already registered");
+
     NSRunLoop *runloop = [NSRunLoop currentRunLoop];
     _terminatePort = [NSMachPort new];
     _terminatePort.delegate = self;
@@ -41,7 +50,7 @@ static NSInteger _instanceCount = 0;
 
 - (void)deregister {
 
-    NSAssert(_terminatePort, @"Object is not registered");
+    NSAssert([RunLoopController currentRunLoopController], @"Not registered");
 
     _instanceCount--;
 
@@ -87,8 +96,7 @@ static NSInteger _instanceCount = 0;
     if (![NSThread isMainThread]) {
         LOG(@"%p: Signalling main thread's run loop controller", self);
 
-        NSThread *mainThread = [NSThread mainThread];
-        RunLoopController *runLoopController = [[mainThread threadDictionary] objectForKey:_threadDictKey];
+        RunLoopController *runLoopController = [RunLoopController mainRunLoopController];
         [runLoopController _signal];
     }
 }

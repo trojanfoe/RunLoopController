@@ -16,6 +16,20 @@
 + (NSInteger)instanceCount;
 
 /**
+ * Retrieve the RunLoopController object associated with the current thread.
+ *
+ * @return The RunLoopController object associated with the current thread.
+ */
++ (RunLoopController *)currentRunLoopController;
+
+/**
+ * Retrieve the RunLoopController object associated with the main thread.
+ *
+ * @return The RunLoopController object associated with the main thread.
+ */
++ (RunLoopController *)mainRunLoopController;
+
+/**
  * Register the run loop controller with the current run loop.
  */
 - (void)register;

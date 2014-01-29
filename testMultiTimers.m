@@ -1,8 +1,6 @@
 #import "RunLoopController.h"
 
-#define LOGGING 1
-
-#if LOGGING
+#ifdef LOGGING
 #define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
 #else
 #define LOG(fmt, ...) /* nothing */
@@ -58,7 +56,7 @@ int main(int argc, const char **argv) {
         for (unsigned i = 0; i < 4; i++) {
             LOG(@"Creating timer %u", i);
             threads[i] = [TimerThread new];
-            threads[i].sleepTime = i;
+            threads[i].sleepTime = i + 1.0;
             [threads[i] start];
         }
 

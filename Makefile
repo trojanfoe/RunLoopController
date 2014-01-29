@@ -1,6 +1,6 @@
 
 CC = clang
-MFLAGS = -DDEBUG=1 -g -fobjc-arc
+MFLAGS = -DLOGGING -DDEBUG=1 -g -fobjc-arc
 LDFLAGS = -g
 LIBS = -framework Foundation
 
