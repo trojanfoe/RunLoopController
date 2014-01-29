@@ -5,19 +5,14 @@
  *
  * Licensed under the MIT License.
  *
- * Usage: testAsyncDownloader [url ... url]
+ * Usage: testAsyncNetworking [url ... url]
  * If a url is not specified then http://www.google.com is used.
  */
 
 #import "RunLoopController.h"
 #import "AsyncDownloader.h"
 
-#ifdef LOGGING
-#define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
-#else
-#define LOG(fmt, ...) /* nothing */
-#endif
-
+// Move the implementation from main() into MainObject in order to receive notifications.
 @interface MainObject : NSObject {
     RunLoopController *_runLoopController;
 }
@@ -73,12 +68,8 @@
                 if (downloader.isFinished)
                     finished++;
             }
-            if (finished == [downloaders count]) {
-                NSLog(@"All downloaders complete");
-                allFinished = YES;
-            } else {
-                NSLog(@"%ld/%ld downloaders complete", (long)finished, (long)[downloaders count]);
-            }
+            NSLog(@"%ld/%ld downloaders complete", (long)finished, (long)[downloaders count]);
+            allFinished = (finished == [downloaders count]);
         }
 
         [[NSNotificationCenter defaultCenter] removeObserver:self
@@ -103,14 +94,20 @@
     } else {
         NSError *error = userInfo[AsyncDownloaderFinishedNotificationErrorKey];
         NSAssert(error, @"Expected an error value in the notification userInfo dictionary");
-        NSLog(@"Failed to download from '%@': %@", downloader.url, [error localizedDescription]);
+        NSError *underlyingError = (NSError *)[[error userInfo] objectForKey:NSUnderlyingErrorKey];
+        if (underlyingError) {
+            NSLog(@"Failed to download from '%@': %@: %@",
+                downloader.url, [error localizedDescription], [underlyingError localizedDescription]);
+        } else {
+            NSLog(@"Failed to download from '%@': %@",
+                downloader.url, [error localizedDescription]);
+        }
     }
 
     [_runLoopController signal];
 }
 
 @end
-
 
 int main(int argc, const char **argv) {
     int retval = 0;
