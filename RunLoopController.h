@@ -72,5 +72,13 @@
  */
 - (BOOL)shouldTerminate;
 
+/**
+ * "Signal" the run loop associated with the run loop controller.
+ *
+ * This is useful if you want to wake up a run loop so the code running the loop
+ * can evaluate conditions for termination (most useful in the main thread run loop).
+ */
+- (void)signal;
+
 @end
 

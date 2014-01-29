@@ -9,11 +9,6 @@
 static NSString * const _threadDictKey = @"RunLoopController";
 static NSInteger _instanceCount = 0;
 
-// Private Methods
-@interface RunLoopController ()
-- (void)_signal;
-@end
-
 @implementation RunLoopController
 
 #pragma mark - RunLoopController methods
@@ -89,7 +84,7 @@ static NSInteger _instanceCount = 0;
     LOG(@"%p: Terminating", self);
 
     _terminate = YES;
-    [self _signal];
+    [self signal];
 
     // If we are not the main thread, then find the RunLoopController for the main thread
     // and also signal it's mach port to wake up its run loop
@@ -97,7 +92,7 @@ static NSInteger _instanceCount = 0;
         LOG(@"%p: Signalling main thread's run loop controller", self);
 
         RunLoopController *runLoopController = [RunLoopController mainRunLoopController];
-        [runLoopController _signal];
+        [runLoopController signal];
     }
 }
 
@@ -105,7 +100,7 @@ static NSInteger _instanceCount = 0;
     return _terminate;
 }
 
-- (void)_signal {
+- (void)signal {
     [_terminatePort sendBeforeDate:[NSDate date]
                         components:nil
                               from:nil
