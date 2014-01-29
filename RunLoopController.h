@@ -61,22 +61,23 @@
      beforeDate:(NSDate *)limitDate;
 
 /**
- * Signal the run loop to terminate.
+ * Set the terminate flag and signal the associated run loop (calling the
+ * -signal method).
  */
 - (void)terminate;
 
 /**
- * Determine if the run loop was terminated via this controller
+ * Determine if the terminate flag is set.
  *
  * @return YES if the run loop should terminate, else NO.
  */
 - (BOOL)shouldTerminate;
 
 /**
- * "Signal" the run loop associated with the run loop controller.
+ * Signal the run loop associated with the run loop controller.
  *
  * This is useful if you want to wake up a run loop so the code running the loop
- * can evaluate conditions for termination (most useful in the main thread run loop).
+ * can evaluate conditions for termination (normally the main thread run loop).
  */
 - (void)signal;
 

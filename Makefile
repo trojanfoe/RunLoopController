@@ -22,6 +22,9 @@ testMultiTimers: testMultiTimers.o RunLoopController.o
 testDispatch: testDispatch.o RunLoopController.o
 	$(CC) $(LDFLAGS) -o $@ testDispatch.o RunLoopController.o $(LIBS)
 
+test: $(TARGETS)
+	$(foreach exe,$(TARGETS),$(shell ./$(exe)))
+
 clean:
 	rm -f $(TARGETS) *.o
 	rm -rf *.dSYM
