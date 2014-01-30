@@ -119,11 +119,16 @@
 int main(int argc, const char **argv) {
     int retval = 0;
     @autoreleasepool {
-        BOOL opt, singleThread = NO;
+        int opt;
+        BOOL singleThread = NO;
         while ((opt = getopt(argc, (char * const *)argv, "s")) != -1) {
             switch (opt) {
-                case 's': singleThread = YES; break;
-                default: NSLog(@"Invalid options"); return -1;
+                case 's':
+                    singleThread = YES;
+                    break;
+                default:
+                    NSLog(@"Invalid option '%c'", (char)opt);
+                    return 1;
             }
         }
         argc -= optind;
@@ -134,7 +139,7 @@ int main(int argc, const char **argv) {
             NSLog(@"Using a single thread");
             MainObject *mainObj = [MainObject new];
             NSMutableArray *arguments = [NSMutableArray new];
-            for (int i = 1; i < argc; i++)
+            for (int i = 0; i < argc; i++)
                 [arguments addObject:[NSString stringWithUTF8String:argv[i]]];
             retval = [mainObj runWithArguments:arguments];
         } else {
