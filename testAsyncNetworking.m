@@ -34,8 +34,6 @@
         _runLoopController = [RunLoopController new];
         [_runLoopController register];
 
-        AsyncDownloader *downloader = [AsyncDownloader new];
-
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(downloadFinished:)
                                                      name:AsyncDownloaderFinishedNotification
@@ -44,23 +42,11 @@
         if ([arguments count] == 0)
             arguments = @[ @"http://www.google.com" ];
 
-        // Capture the list of URLs
-        NSMutableArray *urls = [NSMutableArray new];
-        for (NSString *urlString in arguments) {
-            [urls addObject:[NSURL URLWithString:urlString]];
-        }
-
-        // Initialize the list of AsyncDownloader objects
         NSMutableArray *downloaders = [NSMutableArray new];
-        for (NSURL *url in urls) {
+        for (NSString *urlString in arguments) {
             AsyncDownloader *downloader = [AsyncDownloader new];
             [downloaders addObject:downloader];
-        }
-
-        // Start downloading from the URLs
-        for (NSInteger i = 0; i < [downloaders count]; i++) {
-            AsyncDownloader *downloader = [downloaders objectAtIndex:i];
-            [downloader downloadFromURL:[urls objectAtIndex:i]];
+            [downloader downloadFromURL:[NSURL URLWithString:urlString]];
         }
 
         // Wait until all downloaders are finished
