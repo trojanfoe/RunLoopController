@@ -14,35 +14,29 @@
 #define LOG(fmt, ...) /* nothing */
 #endif
 
-NSString * const AsyncDownloaderFinishedNotification = @"AsyncDownloaderFinishedNotification";
-NSString * const AsyncDownloaderFinishedNotificationSucceededKey = @"AsyncDownloaderFinishedNotificationSucceeded";
-NSString * const AsyncDownloaderFinishedNotificationErrorKey = @"AsyncDownloaderFinishedNotificationError";
+NSString * const AsyncDownloaderFinishedNotification = @"AsyncDownloaderFinishedNotification",
+         * const AsyncDownloaderFinishedNotificationSucceededKey = @"AsyncDownloaderFinishedNotificationSucceeded",
+         * const AsyncDownloaderFinishedNotificationErrorKey = @"AsyncDownloaderFinishedNotificationError";
+
 static NSString * const _asyncDownloaderErrorDomain = @"AsyncDownloaderErrorDomain";
 
-// Private Methods
-@interface AsyncDownloader ()
-
-- (void)_sendFinishedNotification;
-- (void)_setErrorWithString:(NSString *)message
-            underlyingError:(NSError *)underlyingError;
-
-@end
-
 @implementation AsyncDownloader
+{
+    NSURLConnection *_connection;
+    NSMutableData *_responseData;
+}
 
-@synthesize cancel = _cancel;
-@synthesize url = _url;
-@synthesize responseEncoding = _responseEncoding;
-@synthesize finished = _finished;
-@synthesize error = _error;
+@synthesize url = _url, error = _error, cancel = _cancel,
+       finished = _finished,  responseEncoding = _responseEncoding;
 
 - (BOOL)downloadFromURL:(NSURL *)url {
-    _url = url;
-    _connection = nil;
-    _responseData = nil;
-    _cancel = NO;
+
+    _url              = url;
+    _connection       = nil;
+    _responseData     = nil;
+    _cancel           = NO;
     _responseEncoding = NSUTF8StringEncoding;
-    _error = nil;
+    _error            = nil;
 
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
     if (!request) {
@@ -53,8 +47,8 @@ static NSString * const _asyncDownloaderErrorDomain = @"AsyncDownloaderErrorDoma
         return NO;
     }
 
-    _connection = [[NSURLConnection alloc] initWithRequest:request
-                                                  delegate:self];
+    _connection = [NSURLConnection.alloc initWithRequest:request delegate:self];
+
     if (!_connection) {
         _finished = YES;
         [self _setErrorWithString:@"Failed to create NSURLConnection object"
@@ -70,36 +64,33 @@ static NSString * const _asyncDownloaderErrorDomain = @"AsyncDownloaderErrorDoma
 
 #pragma mark - NSURLConnectionDelegate methods
 
-- (void)connection:(NSURLConnection *)connection
-didReceiveResponse:(NSURLResponse *)response {
+- (void)connection:(NSURLConnection*)connection didReceiveResponse:(NSURLResponse*)response {
 
-    if (_cancel)
-        return;
+    if (_cancel) return;
 
     NSString *textEncodingName = response.textEncodingName;
     LOG(@"Received response from '%@'. Encoding=%@", _url, textEncodingName);
-    _responseData = [NSMutableData new];
-    if (textEncodingName) {
-        CFStringEncoding cfEncoding = CFStringConvertIANACharSetNameToEncoding((CFStringRef)textEncodingName);
-        _responseEncoding = CFStringConvertEncodingToNSStringEncoding(cfEncoding);
-    } else {
-        _responseEncoding = NSUTF8StringEncoding;
-    }
+    _responseData = NSMutableData.new;
+    _responseEncoding = textEncodingName
+                      ? CFStringConvertEncodingToNSStringEncoding(
+                         CFStringConvertIANACharSetNameToEncoding(
+                            (CFStringRef)textEncodingName
+                          )
+                        )
+                      : NSUTF8StringEncoding;
 }
 
-- (void)connection:(NSURLConnection *)connection
-    didReceiveData:(NSData *)data {
+- (void)connection:(NSURLConnection*)connection didReceiveData:(NSData*)data {
 
-    if (_cancel)
-        return;
+    if (_cancel) return;
 
     LOG(@"Received %lu bytes from '%@'", (unsigned long)[data length], _url);
 
     [_responseData appendData:data];
 }
 
-- (NSCachedURLResponse *)connection:(NSURLConnection *)connection
-                  willCacheResponse:(NSCachedURLResponse *)cachedResponse {
+- (NSCachedURLResponse *)connection:(NSURLConnection*)connection
+                  willCacheResponse:(NSCachedURLResponse*)cachedResponse {
     return nil;         // Not necessary
 }
 
@@ -120,28 +111,29 @@ didReceiveResponse:(NSURLResponse *)response {
     [self _sendFinishedNotification];
 }
 
+#pragma mark - Private Methods
+
 - (void)_sendFinishedNotification {
     NSAssert(_finished, @"Download didn't finish!");
 
-    NSMutableDictionary *userInfo = [NSMutableDictionary new];
-    if (_error) {
-        userInfo[AsyncDownloaderFinishedNotificationSucceededKey] = @(NO);
-        userInfo[AsyncDownloaderFinishedNotificationErrorKey] = _error;
-    } else {
-        userInfo[AsyncDownloaderFinishedNotificationSucceededKey] = @(YES);
-    }
+    id userInfo =
+      @{AsyncDownloaderFinishedNotificationSucceededKey : @(!(_error))}.mutableCopy;
 
-    [[NSNotificationCenter defaultCenter] postNotificationName:AsyncDownloaderFinishedNotification
-                                                        object:self
+    if (_error)
+        [userInfo setObject:_error forKey:AsyncDownloaderFinishedNotificationErrorKey];
+
+    [NSNotificationCenter.defaultCenter postNotificationName:AsyncDownloaderFinishedNotification
+                                                      object:self
                                                     userInfo:userInfo];
 }
 
 - (void)_setErrorWithString:(NSString *)message
             underlyingError:(NSError *)underlyingError {
 
-    NSMutableDictionary *userInfo = [NSMutableDictionary new];
-    if (message)
-        userInfo[NSLocalizedDescriptionKey] = message;
+    NSMutableDictionary *userInfo = NSMutableDictionary.new;
+
+    if (message) userInfo[NSLocalizedDescriptionKey] = message;
+
     if (underlyingError)
         userInfo[NSUnderlyingErrorKey] = underlyingError;
 

@@ -6,7 +6,7 @@
  * Licensed under the MIT License.
  */
 
-#import <Foundation/Foundation.h>
+@import Foundation;
 
 // Notification name
 extern NSString * const AsyncDownloaderFinishedNotification;
@@ -15,18 +15,17 @@ extern NSString * const AsyncDownloaderFinishedNotification;
 extern NSString * const AsyncDownloaderFinishedNotificationSucceededKey;    // @(YES) or @(NO)
 extern NSString * const AsyncDownloaderFinishedNotificationErrorKey;        // NSError or missing
 
-@interface AsyncDownloader : NSObject <NSURLConnectionDelegate> {
-    NSURLConnection *_connection;
-    NSMutableData *_responseData;
-}
+@interface AsyncDownloader : NSObject <NSURLConnectionDelegate>
 
-@property (getter=isCancelled) BOOL cancel;
-@property (readonly) NSURL *url;
-@property (readonly) NSData *responseData;
-@property (readonly) NSStringEncoding responseEncoding;
-@property (readonly, getter=isFinished) BOOL finished;
-@property (readonly) NSError *error;
+@property (getter=isCancelled)          BOOL   cancel;
+@property (getter=isFinished,readonly)  BOOL   finished;
 
-- (BOOL)downloadFromURL:(NSURL *)url;
+@property (readonly)        NSStringEncoding   responseEncoding;
+
+@property (readonly)                   NSURL * url;
+@property (readonly)                  NSData * responseData;
+@property (readonly)                 NSError * error;
+
+- (BOOL) downloadFromURL:(NSURL*)url;
 
 @end
