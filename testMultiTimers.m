@@ -19,7 +19,6 @@
 }
 @property NSTimeInterval sleepTime;
 @property RunLoopController *runLoopController;
-@property (readonly, assign) BOOL finished;
 @end
 
 @implementation TimerThread
@@ -48,7 +47,7 @@
 - (void)timerFired:(NSTimer *)timer {
     LOG(@"%p: Fired", self);
     _finished = YES;
-    [self.runLoopController terminate];
+    [self.runLoopController setShouldTerminate:YES];
 }
 
 @end
