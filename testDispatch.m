@@ -6,19 +6,18 @@
  * Licensed under the MIT License.
  */
 
-#import "RunLoopController.h"
-
-#ifdef LOGGING
-#define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
-#else
-#define LOG(fmt, ...) /* nothing */
+#ifndef WANT_RUNLOOP_LOGGER
+#define WANT_RUNLOOP_LOGGER
 #endif
 
+#import "RunLoopController.h"
+
 int main(int argc, const char **argv) {
+
     int retval = 0;
     @autoreleasepool {
 
-        RunLoopController *runLoopController = [RunLoopController new];
+        RunLoopController *runLoopController = RunLoopController.new;
         [runLoopController register];
         
         __block NSInteger count = 0;

@@ -6,13 +6,11 @@
  * Licensed under the MIT License.
  */
 
-#import "RunLoopController.h"
-
-#ifdef LOGGING
-#define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
-#else
-#define LOG(fmt, ...) /* nothing */
+#ifndef WANT_RUNLOOP_LOGGER
+#define WANT_RUNLOOP_LOGGER
 #endif
+
+#import "RunLoopController.h"
 
 static NSString * const _threadDictKey = @"RunLoopController";
 static NSInteger _instanceCount = 0;

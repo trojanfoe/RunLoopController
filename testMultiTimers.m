@@ -6,27 +6,24 @@
  * Licensed under the MIT License.
  */
 
-#import "RunLoopController.h"
-
-#ifdef LOGGING
-#define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
-#else
-#define LOG(fmt, ...) /* nothing */
+#ifndef WANT_RUNLOOP_LOGGER
+#define WANT_RUNLOOP_LOGGER
 #endif
 
-@interface TimerThread : NSThread {
-    NSTimer *_timer;
-}
-@property NSTimeInterval sleepTime;
-@property RunLoopController *runLoopController;
+#import "RunLoopController.h"
+
+@interface TimerThread : NSThread
+
+@property           NSTimer * timer;
+@property    NSTimeInterval   sleepTime;
+@property RunLoopController * runLoopController;
+
 @end
 
-@implementation TimerThread
-
-@synthesize sleepTime = _sleepTime;
-@synthesize finished = _finished;
+@implementation TimerThread @synthesize finished = _finished;
 
 - (void)main {
+
     LOG(@"%p: Starting", self);
 
     self.runLoopController = [RunLoopController new];
@@ -79,8 +76,7 @@ int main(int argc, const char **argv) {
                 }
             }
 
-            if ([RunLoopController instanceCount] == 1)
-                break;
+            if (RunLoopController.instanceCount == 1) break;
         }
 
         [runLoopController deregister];

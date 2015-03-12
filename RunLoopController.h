@@ -62,3 +62,11 @@
 
 @end
 
+
+#ifdef WANT_RUNLOOP_LOGGER
+#ifdef LOGGING
+#define LOG(fmt, ...) NSLog(fmt, ## __VA_ARGS__)
+#else
+#define LOG(fmt, ...) /* nothing */
+#endif
+#endif
